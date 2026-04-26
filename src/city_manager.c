@@ -193,6 +193,7 @@ void add(const char *district_id, const char *username, const char *role) {
     }
     else{
         printf("Report added succesfully\n");
+        log_district(district_id,username,role,"add");
     }
 
     close(file_directory);
@@ -224,7 +225,7 @@ void list(const char *district_id, const char *username, const char *role){
         printf("Latitude %.2f | Longitude %.2f: | Category: %s | Severity: %d\nAdded on: %s", r.latitude, r.longitude, r.category, r.severity, ctime(&r.timestamp));
         printf("Report description: %s\n\n", r.description);
     }
-
+    log_district(district_id,username,role,"list");
 
     close(fd);
 }
@@ -250,6 +251,7 @@ void view(const char *district_id, const char *username, const char *role,int re
     }
 
     if(exist == 0) printf("Non-existent ID\n");
+    else{log_district(district_id,username,role,"view");}
 
     close(fd);
 }
@@ -302,6 +304,7 @@ void remove_report(const char *district_id, const char *username, const char *ro
         perror("Truncate error");
     } else {
         printf("The report with ID %d was deleted by %s.\n", report_id, username);
+        log_district(district_id,username,role,"remove");
     }
 
     close(fd);
@@ -348,6 +351,7 @@ void update_threshold(const char *district_id, const char *username,const char *
     }
     else{
         printf("Threshold updated by manager %s",username);
+        log_district(district_id,username,role,"update");
     }
 
     close(fd);
