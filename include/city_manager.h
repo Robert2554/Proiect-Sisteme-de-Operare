@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <errno.h>
 
 #define MAX_NAME 30
@@ -38,6 +39,7 @@ void view(const char *district_id,const char *username,const char *role,int repo
 void remove_report(const char *district_id,const char *username,const char *role,int report_id);
 void update_threshold(const char *district_id,const char *username,const char *role,int value);
 void filter_district(const char *district_id,const char *role,int num_conditions,char **conditions);
+void remove_district(const char *district_id,const char *role);
 
 
 #endif

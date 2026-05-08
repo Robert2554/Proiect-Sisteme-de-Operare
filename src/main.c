@@ -20,6 +20,7 @@ int main(int argc , char **argv){
             filter_district(district, role, num_conditions, conditions);
             log_district(district,user,role,"filter");
         }
+        else if(strcmp(command,"--remove_district") == 0 && (argc == 7)) remove_district(district,role);
     }
 
 

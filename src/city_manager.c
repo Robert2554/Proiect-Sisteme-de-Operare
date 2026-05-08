@@ -409,4 +409,44 @@ void filter_district(const char *district_id, const char *role, int num_conditio
     close(fd);
 }
 
+void remove_district(const char *district_id , const char *role){
+    if(strcmp(role,"manager") != 0){
+        fprintf(stderr,"Error ! Only managers can remove districts !");
+        return;
+    }
+    
+    char symLinkPath[MAX_PATH];
+    sprintf(symLinkPath,"active_reports-%s",district_id);
+
+    if(unlink(symLinkPath) < 0){
+        perror("Unlink error");
+        return;
+    }
+
+    pid_t pid = fork();
+    if(pid < 0){
+        perror("Process creation error");
+        return;
+    }
+    else if(pid == 0){
+        execlp("rm","rm","-rf",district_id,NULL);
+        perror("Execlp error");
+        exit(EXIT_FAILURE);
+    }else{
+
+        int status;
+        if(wait(&status) == -1){
+            perror("Wait status error");
+            return;
+        }
+        if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
+            printf("Directory %s was deleted succesfully ! Process ended with status %d",district_id,status);
+        }
+        else{
+            fprintf(stderr,"Error deleting directory");
+            return;
+        }
+    }
+}
+
 
