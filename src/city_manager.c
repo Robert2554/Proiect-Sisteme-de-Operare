@@ -24,7 +24,7 @@ int open_and_check_permissions(const char *pathname, int flags, mode_t mode, con
         file_directory = open(pathname, flags | O_EXCL, mode);
         if (file_directory != -1) { // Daca fisierul a fost creat pentru prima data , setam permisiunile cu chmod
             if (chmod(pathname, mode) == -1) {
-                perror("Chmod error");
+                perror("Eroare la chmod");
             }
         } else if (errno == EEXIST) {
             file_directory = open(pathname, flags & ~O_CREAT);
@@ -34,26 +34,26 @@ int open_and_check_permissions(const char *pathname, int flags, mode_t mode, con
     }
 
     if (file_directory == -1) {
-        perror("Error opening file"); 
+        perror("Eroare deschidere fisier"); 
         return -1;
     }
 
     struct stat st;
     if (fstat(file_directory, &st) == -1) {
-        perror("Stat error");
+        perror("Eroare stat");
         close(file_directory);
         return -1;
     }
 
     if (strcmp(role, "manager") == 0) { // Verificarea permisiunilor pentru fiecare rol
         if (!(st.st_mode & manager_bit) && (manager_bit != 0)) {
-            fprintf(stderr, "Permission denied for manager role\n");
+            fprintf(stderr, "Managerul nu are aceasta permisiune\n");
             close(file_directory);
             return -1;
         }
     } else if (strcmp(role, "inspector") == 0) {
         if (!(st.st_mode & inspector_bit) && (inspector_bit != 0)) {
-            fprintf(stderr, "Permission denied for inspector role\n");
+            fprintf(stderr, "Inspectorul nu are aceasta permisiune\n");
             close(file_directory);
             return -1;
         }
@@ -66,12 +66,12 @@ int open_and_check_permissions(const char *pathname, int flags, mode_t mode, con
 void create_dir(const char *name) {
     if (mkdir(name, 0750) == -1) { // Creare director
         if (errno != EEXIST) {
-            perror("Error creating directory");
+            perror("Eroare la crearea directorului");
             exit(EXIT_FAILURE);
         }
     }
     if(chmod(name, 0750) == -1){
-        perror("Chmod error");
+        perror("Eroare la chmod");
         exit(1);
     }
 }
@@ -109,7 +109,7 @@ void check_dangling_link(const char *district_id) {
         if (S_ISLNK(link_info.st_mode)) {
             
             if (stat(linkpath, &target_info) == -1) {
-                printf("WARNING: Dangling link detected for '%s'!\n", linkpath);
+                printf("Atentie: Dangling link detectat pentru '%s'!\n", linkpath);
             }
         }
     }
@@ -131,7 +131,7 @@ void log_district(const char *district_id, const char *username, const char *rol
     int len = sprintf(buffer, "%ld %s %s %s\n", (long)now, username, role, command);
 
     if (write(fd, buffer, len) == -1) { // Scriem ultima comanda executata impreuna cu informatiile despre ea
-        perror("Error writing to log");
+        perror("Eroare la scriere in log");
         close(fd);
         return;
     }
@@ -192,8 +192,50 @@ void add(const char *district_id, const char *username, const char *role) {
         return;
     }
     else{
-        printf("Report added succesfully\n");
-        log_district(district_id,username,role,"add");
+        printf("Raport adaugat cu succes!\n");
+        log_district(district_id, username, role, "add");
+        
+        // --- Inceput Modificare Faza 2 ---
+        char notification_msg[256];
+        
+        int pid_fd = open(".monitor_pid", O_RDONLY);
+        if (pid_fd == -1) {
+            // Daca fisierul nu exista, pregatim mesajul de eroare 
+            snprintf(notification_msg, sizeof(notification_msg), "Monitorul nu a putut fi informat despre eveniment: fisierul .monitor_pid nu a fost gasit.\n");
+        } else {
+            char pid_buf[32];
+            int bytes_read = read(pid_fd, pid_buf, sizeof(pid_buf) - 1);
+            close(pid_fd);
+
+            if (bytes_read > 0) {
+                pid_buf[bytes_read] = '\0';
+                pid_t monitor_pid = atoi(pid_buf);
+                
+                // 2. Trimitem semnalul SIGUSR1 catre procesul monitor 
+                if (kill(monitor_pid, SIGUSR1) == 0) {
+                    snprintf(notification_msg, sizeof(notification_msg),"Monitorul (PID %d) a fost notificat cu succes despre noul raport.\n", monitor_pid);
+                } else {
+                    // Daca procesul monitor nu mai exista sau kill a esuat 
+                    snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat: semnalul kill a esuat pentru PID %d.\n", monitor_pid);
+                }
+            } else {
+                snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat: fisierul .monitor_pid este gol.\n");
+            }
+        }
+
+        // 3. Scriem rezultatul notificarii in fisierul de log al districtului
+        char log_path[MAX_PATH];
+        snprintf(log_path, sizeof(log_path), "%s/logged_district", district_id);
+        
+        int log_fd = open(log_path, O_WRONLY | O_APPEND | O_CREAT, 0644);
+        if (log_fd != -1) {
+            write(log_fd, notification_msg, strlen(notification_msg));
+            close(log_fd);
+        } else {
+            perror("ATENTIE: Nu s-a putut scrie mesajul de notificare in logged_district");
+        }
+        
+        
     }
 
     close(file_directory);
@@ -250,7 +292,7 @@ void view(const char *district_id, const char *username, const char *role,int re
         }
     }
 
-    if(exist == 0) printf("Non-existent ID\n");
+    if(exist == 0) printf("ID inexistent\n");
     else{log_district(district_id,username,role,"view");}
 
     close(fd);
@@ -261,7 +303,7 @@ void remove_report(const char *district_id, const char *username, const char *ro
     sprintf(pathname, "%s/reports.dat", district_id);
 
     if (strcmp(role, "manager") != 0) {
-        fprintf(stderr, "Access Denied: Role %s does not have permission to remove reports!\n", role);
+        fprintf(stderr, "Acces nepermis: Rolul %s nu are permisiunea de a sterge rapoarte!\n", role);
         return; 
     }
 
@@ -270,7 +312,7 @@ void remove_report(const char *district_id, const char *username, const char *ro
 
     struct stat st;
     if (fstat(fd, &st) == -1) {
-        perror("Stat error");
+        perror("Eroare stat");
         close(fd);
         return;
     }
@@ -278,7 +320,7 @@ void remove_report(const char *district_id, const char *username, const char *ro
 
     // Veficam sa nu citim in afara fisierului
     if (report_id * sizeof(Report) >= current_size) {
-        printf("Error: The report with ID %d doesn't exist.\n", report_id);
+        printf("Eroare: Raportul cu ID-ul %d nu exista.\n", report_id);
         close(fd);
         return;
     }
@@ -301,9 +343,9 @@ void remove_report(const char *district_id, const char *username, const char *ro
     }
 
     if (ftruncate(fd, current_size - sizeof(Report)) == -1) { // Stergem ultimul raport din fisier , pentru ca nu mai avem nevoie de el
-        perror("Truncate error");
+        perror("ftruncate");
     } else {
-        printf("The report with ID %d was deleted by %s.\n", report_id, username);
+        printf("Raportul cu ID-ul %d a fost sters de %s.\n", report_id, username);
         log_district(district_id,username,role,"remove");
     }
 
@@ -315,7 +357,7 @@ void update_threshold(const char *district_id, const char *username,const char *
     sprintf(pathname,"%s/district.cfg",district_id);
 
     if (strcmp(role, "manager") != 0) {
-        fprintf(stderr, "Access Denied: Role %s does not have permission to modify threshold!\n", role);
+        fprintf(stderr, "Acces nepermis: Rolul %s nu are permisiunea de a modifica threshold-ul!\n", role);
         return; 
     }
 
@@ -325,19 +367,19 @@ void update_threshold(const char *district_id, const char *username,const char *
 
     struct stat st;
     if(fstat(fd,&st) == -1){
-        perror("Stat error");
+        perror("Eroare stat");
         return;
     }
 
     if((st.st_mode & 0777) != 0640){
-        fprintf(stderr,"Error! Permission bits have been changed\n");
+        fprintf(stderr,"Eroare ! Bitii de permisiuni au fost modificati\n");
         close(fd);
         return;
 
     }
 
     if (ftruncate(fd, 0) == -1) {
-        perror("Truncate error");
+        perror("Eroare ftruncate");
         return;
     }
 
@@ -345,12 +387,12 @@ void update_threshold(const char *district_id, const char *username,const char *
     int len = sprintf(buffer,"severity = %d",value);
 
     if(write(fd,buffer,len) == -1){
-        perror("Write error");
+        perror("Eroare write");
         close(fd);
         return;
     }
     else{
-        printf("Threshold updated by manager %s",username);
+        printf("Threshold actualizat de managerul %s",username);
         log_district(district_id,username,role,"update");
     }
 
@@ -403,7 +445,7 @@ void filter_district(const char *district_id, const char *role, int num_conditio
     }
 
     if (!found_any) {
-        printf("No reports matched all conditions.\n");
+        printf("Nici un report nu a indeplinit conditiile.\n");
     }
 
     close(fd);
@@ -411,7 +453,14 @@ void filter_district(const char *district_id, const char *role, int num_conditio
 
 void remove_district(const char *district_id , const char *role){
     if(strcmp(role,"manager") != 0){
-        fprintf(stderr,"Error ! Only managers can remove districts !");
+        fprintf(stderr,"Eroare! Doar managerii pot sterge districte");
+        return;
+    }
+
+    if (district_id == NULL || strlen(district_id) == 0 || 
+        strcmp(district_id, "/") == 0 || strcmp(district_id, ".") == 0 || 
+        strcmp(district_id, "..") == 0) {
+        fprintf(stderr, "Eroare critica: District ID invalid.\n");
         return;
     }
     
@@ -425,25 +474,25 @@ void remove_district(const char *district_id , const char *role){
 
     pid_t pid = fork();
     if(pid < 0){
-        perror("Process creation error");
+        perror("Creare proces");
         return;
     }
     else if(pid == 0){
         execlp("rm","rm","-rf",district_id,NULL);
-        perror("Execlp error");
+        perror("Execlp eroare");
         exit(EXIT_FAILURE);
     }else{
 
         int status;
         if(wait(&status) == -1){
-            perror("Wait status error");
-            return;
+            perror("Eroare wait");
+            exit(EXIT_FAILURE);
         }
         if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
-            printf("Directory %s was deleted succesfully ! Process ended with status %d",district_id,status);
+            printf("Directorul %s a fost adaugat ! Proces terminat cu statusul %d",district_id,status);
         }
         else{
-            fprintf(stderr,"Error deleting directory");
+            fprintf(stderr,"Eroare la stergerea directorului");
             return;
         }
     }
