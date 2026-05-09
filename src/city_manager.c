@@ -200,7 +200,6 @@ void add(const char *district_id, const char *username, const char *role) {
         
         int pid_fd = open(".monitor_pid", O_RDONLY);
         if (pid_fd == -1) {
-            // Daca fisierul nu exista, pregatim mesajul de eroare 
             snprintf(notification_msg, sizeof(notification_msg), "Monitorul nu a putut fi informat despre eveniment: fisierul .monitor_pid nu a fost gasit.\n");
         } else {
             char pid_buf[32];
@@ -216,10 +215,10 @@ void add(const char *district_id, const char *username, const char *role) {
                     snprintf(notification_msg, sizeof(notification_msg),"Monitorul (PID %d) a fost notificat cu succes despre noul raport.\n", monitor_pid);
                 } else {
                     // Daca procesul monitor nu mai exista sau kill a esuat 
-                    snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat: semnalul kill a esuat pentru PID %d.\n", monitor_pid);
+                    snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat. Semnalul kill a esuat pentru PID %d.\n", monitor_pid);
                 }
             } else {
-                snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat: fisierul .monitor_pid este gol.\n");
+                snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat.Eroare la citirea din fisier.\n");
             }
         }
 
@@ -489,7 +488,7 @@ void remove_district(const char *district_id , const char *role){
             exit(EXIT_FAILURE);
         }
         if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
-            printf("Directorul %s a fost adaugat ! Proces terminat cu statusul %d",district_id,status);
+            printf("Directorul %s a fost sters ! Proces terminat cu statusul %d",district_id,status);
         }
         else{
             fprintf(stderr,"Eroare la stergerea directorului");

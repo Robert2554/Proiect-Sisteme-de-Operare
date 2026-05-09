@@ -24,7 +24,7 @@ void cleanup_and_exit() {
     } else {
         // Parintele asteapta stergerea si se inchide
         wait(NULL);
-        printf("\nAm primit SIGINT. Fisierul .monitor_pid a fost sters. La revedere!\n");
+        printf("\nAm primit SIGINT. Fisierul .monitor_pid a fost sters.\n");
         exit(0);
     }
 }
@@ -55,11 +55,10 @@ void setup_signals() {
     }
 }
 
-// Functia care scrie PID-ul in fisier (creates or overwrites)
+// Functia care scrie PID-ul in fisier
 void write_pid_file() {
     pid_t my_pid = getpid();
     
-    // O_TRUNC asigura ca fisierul este suprascris daca exista deja
     int fd = open(".monitor_pid", O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
         perror("Eroare la deschiderea/crearea .monitor_pid");
