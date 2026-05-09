@@ -31,19 +31,29 @@ Documentatie Utilizare AI - Faza 2
 Model AI: Gemini (Google).
 
 2. Prompt-urile Oferite
+
 Pentru Faza 2 a proiectului, m-am concentrat pe gestiunea proceselor si comunicarea prin semnale. Am folosit AI-ul punctual pentru a intelege apelurile de sistem noi si pentru a depana modul de testare:
+
 Prompt 1: "De ce trebuie sa folosim un proces copil pentru a sterge un director ? De ce nu putem rula comanda execlp direct dintr-un singur proces?"
+
 Prompt 2: "Care este diferenta dintre sleep() si pause() intr-o bucla infinita a unui proces care actioneaza ca un monitor?"
+
 Prompt 3: "Daca folosesc kill(pid, SIGUSR1) ca sa trimit un semnal, de ce functia imi returneaza -1? Cum verific daca procesul cu acel PID chiar ruleaza?"
+
 Prompt 4: "Cum testez concret comunicarea intre cele doua programe din terminal, daca vreau sa folosesc un singur terminal, nu doua separate?"
 
 3. Ce a fost generat
+
 AI-ul mi-a explicat cum functioneaza familia de functii exec* in Linux: acestea inlocuiesc complet imaginea procesului curent din memorie cu noul program apelat.Mi-a clarificat faptul ca, daca as fi rulat execlp("rm", ...) direct din programul principal city_manager, programul meu s-ar fi transformat efectiv in comanda rm, si-ar fi terminat executia dupa stergere si s-ar fi inchis definitiv, fara a mai rula restul codului meu.
+
 M-a informat despre diferenta de performanta dintre sleep() si pause(), aratand ca pause() suspenda procesul cu 0% consum CPU pana la sosirea unui semnal.
+
 Mi-a explicat ca kill() returneaza -1 daca procesul tinta nu exista sau nu am permisiuni, sugerandu-mi cum sa interpretez acest rezultat pentru a trata erorile.
+
 Pentru partea de testare, AI-ul a generat instructiunile de shell necesare pentru a rula monitor_reports in background folosind operatorul &, si folosirea comenzii fg pentru a-l aduce in prim-plan cand vreau sa il opresc.
 
 4. Ce am modificat / integrat in cod:
+
 Am instantiat un proces copil cu fork() care sa ruleze execlp (sacrificandu-se pentru a deveni comanda rm), in timp ce in procesul parinte am scris logica de wait(&status) pentru a bloca executia pana cand directorul este sters, abia apoi afisand mesajul de succes.
 
 Pe baza explicatiilor despre kill(), am modificat functia add din city_manager: am adaugat un bloc if care verifica daca kill a returnat -1 si, in caz afirmativ, formateaza un mesaj de eroare pe care il scrie cu write in logged_district, conform cerintei.
