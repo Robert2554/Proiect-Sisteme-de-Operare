@@ -83,9 +83,13 @@ int main() {
     setup_signals();
     write_pid_file();
 
-    // Bucla infinita care suspenda procesul pana cand primeste un semnal
+    sigset_t empty_mask;
+    sigemptyset(&empty_mask);
+
+
+    // Bucla infinita care suspenda procesul
     while (1) {
-        pause(); 
+        sigsuspend(&empty_mask); 
     }
 
     return 0;

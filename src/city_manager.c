@@ -212,7 +212,7 @@ void add(const char *district_id, const char *username, const char *role) {
                 
                 // 2. Trimitem semnalul SIGUSR1 catre procesul monitor 
                 if (kill(monitor_pid, SIGUSR1) == 0) {
-                    snprintf(notification_msg, sizeof(notification_msg),"Monitorul (PID %d) a fost notificat cu succes despre noul raport.\n", monitor_pid);
+                    snprintf(notification_msg, sizeof(notification_msg),"Am primit semnalul SIGUSR1 . Monitorul (PID %d) a fost notificat cu succes despre noul raport.\n", monitor_pid);
                 } else {
                     // Daca procesul monitor nu mai exista sau kill a esuat 
                     snprintf(notification_msg, sizeof(notification_msg),"Monitorul nu a putut fi informat. Semnalul kill a esuat pentru PID %d.\n", monitor_pid);
