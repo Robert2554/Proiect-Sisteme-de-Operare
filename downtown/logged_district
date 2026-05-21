@@ -1,2 +1,8 @@
 1779193494 robert manager add
 Monitorul nu a putut fi informat despre eveniment: fisierul .monitor_pid nu a fost gasit.
+1779196354 robert manager add
+Monitorul nu a putut fi informat despre eveniment: fisierul .monitor_pid nu a fost gasit.
+1779196940 robert manager add
+Am primit semnalul SIGUSR1 . Monitorul (PID 10105) a fost notificat cu succes despre noul raport.
+1779204328 mihai inspector add
+Am primit semnalul SIGUSR1 . Monitorul (PID 5199) a fost notificat cu succes despre noul raport.

@@ -1,2 +1,8 @@
 1778311964 mihai inspector add
 Monitorul (PID 17160) a fost notificat cu succes despre noul raport.
+1779355195 andrei inspector add
+Monitorul nu a putut fi informat despre eveniment: fisierul .monitor_pid nu a fost gasit.
+1779355573 sorin manager list
+1779355627 sorin manager view
+1779355701 andreea manager remove
+1779355839 andrei manager update

@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <signal.h>
 
 
 // Functia care sterge fisierul la primirea SIGINT
@@ -17,12 +18,10 @@ void cleanup_and_exit() {
         perror("Eroare la fork pentru stergerea fisierului PID");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        // Copilul ruleaza rm pe fisierul ascuns
         execlp("rm", "rm", ".monitor_pid", NULL);
         perror("Eroare exec rm");
         exit(EXIT_FAILURE);
     } else {
-        // Parintele asteapta stergerea si se inchide
         wait(NULL);
         printf("\nAm primit SIGINT. Fisierul .monitor_pid a fost sters.\n");
         exit(0);
@@ -79,7 +78,32 @@ void write_pid_file() {
     printf("Astept semnale...\n");
 }
 
+int check_existing_monitor() {
+    int pid_fd = open(".monitor_pid", O_RDONLY);
+    if (pid_fd != -1) {
+        char buf[32];
+        int n = read(pid_fd, buf, sizeof(buf) - 1);
+        close(pid_fd);
+        if (n > 0) {
+            buf[n] = '\0';
+            pid_t existing_pid = atoi(buf);
+            
+            if (kill(existing_pid, 0) == 0) {
+                printf("[ERROR] Monitor is already running with ID: %d\n", existing_pid);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int main() {
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    if (check_existing_monitor() == 1) {
+        return 1; 
+    }
+
     setup_signals();
     write_pid_file();
 

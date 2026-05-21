@@ -3,3 +3,9 @@ build1:
 
 build2:
 	gcc -Wall -o monitor_reports src/monitor_reports.c
+
+build3:
+	gcc -Wall -o scorer src/scorer.c
+
+build4:
+	gcc -Wall -o city_hub src/city_hub.c
