@@ -5,6 +5,8 @@
 Documentatie Utilizare AI - Faza 1
 /////////////////////////////////////
 
+
+
 1. Instrumentul Utilizat
 Model AI: Gemini (Google).
 
